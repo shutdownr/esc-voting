@@ -1,11 +1,11 @@
 {
     "name": "esc-voting",
     "type": "module",
-    "scripts": { "start": "node server.js" },
+    "scripts": {
+        "start": "node server.js"
+    },
     "dependencies": {
-      "express": "^4.19.0",
-      "ejs": "^3.1.9",
-      "better-sqlite3": "^9.0.0"
+        "ejs": "^3.1.9",
+        "express": "^4.19.0"
     }
-  }
-  
+}

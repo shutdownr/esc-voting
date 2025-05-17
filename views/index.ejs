@@ -3,44 +3,69 @@
     <title>ESC Abstimmung 2025</title>
     <style>
     body{font-family:sans-serif;max-width:640px;margin:auto;padding:1rem}
-    label{display:flex;justify-content:space-between;margin:3px 0}
-    input{width:4.5em;text-align:center}
-    button{margin-top:1rem;padding:.5rem 1rem;font-size:1rem}
+    #rankList {list-style:none;padding:0}
+    .item {padding:.4rem .6rem;border:1px solid #ccc;margin:.2rem 0;border-radius:4px;display:flex;gap:.5rem;align-items:center;cursor:move;}
+    .handle {font-weight:bold;cursor:grab;}
     </style>
+  
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     </head><body>
-    <h1>Deine Rangliste (1 = beste Platzierung)</h1>
-    <form action="/vote" method="post">
-      <% countries.forEach(c => { %>
-        <label>
-          <span><%= c %></span>
-          <input type="number" name="rank[<%= c %>]" min="1" max="26" required>
-        </label>
-      <% }) %>
-      <button type="submit">Abstimmen</button>
-    </form>
-    <% if (error) { %>
-        <p style="color:#d00;"><%= error %></p>
-      <% } %>
 
-    <script>
-    const KEY='escRanks';
-    document.addEventListener('DOMContentLoaded',()=>{
-        try{
-        const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
-        for(const [country,rank] of Object.entries(saved)){
-            const inp=document.querySelector(`input[name="rank[${country}]"]`);
-            if(inp) inp.value=rank;
-        }
-        }catch(e){}
-        document.querySelectorAll('input[name^="rank["]').forEach(inp=>{
-        inp.addEventListener('input',()=>{
-            const country=inp.name.slice(5,-1);   // rank[Land] -> Land
-            const data=JSON.parse(localStorage.getItem(KEY)||'{}');
-            data[country]=inp.value;
-            localStorage.setItem(KEY,JSON.stringify(data));
-        });
-        });
-    });
-    </script>
-    </body></html>
+    <h1>Deine Rangliste (1 = beste Platzierung)</h1>
     
+<h1>Deine Rangliste (1 = beste Platzierung)</h1>
+
+<form action="/vote" method="post">
+  <ol id="rankList">
+    <% countries.forEach(c => { %>
+      <li class="item" data-country="<%= c %>">
+        <span class="handle">☰</span> <%= c %>
+      </li>
+    <% }) %>
+  </ol>
+
+  <!-- wird vor dem Absenden mit JSON befüllt -->
+  <input type="hidden" name="ranking" id="rankingField">
+  <button type="submit">Abstimmen</button>
+</form>
+
+<% if (error) { %>
+  <p style="color:#d00;"><%= error %></p>
+<% } %>
+
+<!-- --- SCRIPTS ------------------------------------------------------ -->
+<script>
+const KEY      = 'escRanks';
+const list     = document.getElementById('rankList');
+const hidden   = document.getElementById('rankingField');
+
+new Sortable(list, {
+  animation: 150,
+  handle: '.handle',
+  onEnd: saveOrder
+});
+
+(function restore() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(KEY)||'[]');  // [{country,rank},…]
+    if (saved.length) {
+      const map = Object.fromEntries(saved.map(o => [o.country, true]));
+      [...list.children].forEach(li => {
+        const country = li.dataset.country;
+        if (map[country]) list.appendChild(li);
+      });
+    }
+  } catch(e){}
+  saveOrder();
+})();
+
+function saveOrder() {
+  const order = [...list.children].map((li, idx) => ({
+    country: li.dataset.country,
+    rank: idx + 1
+  }));
+  hidden.value = JSON.stringify(order);
+  localStorage.setItem(KEY, hidden.value);                // persist to cache
+}
+</script>
+</body></html>

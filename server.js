@@ -32,23 +32,23 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.get('/', (_, res) => res.render('index', { countries: COUNTRIES }));
 
 app.post('/vote', (req, res) => {
-  const ranks = req.body.rank || {};
-  const nums  = Object.values(ranks).map(Number);
-
-  const valid = nums.length === 26 &&
-                nums.every(n => n >= 1 && n <= 26) &&
-                new Set(nums).size === 26;
-
-  if (!valid) {
-    return res.status(400).render('index', {
+    const arr = JSON.parse(req.body.ranking || '[]');  // [{country, rank}, …]
+    if (arr.length !== 26) {
+      return res.status(400).render('index', {
         countries: COUNTRIES,
-        error: 'Bitte jeden Rang von 1 bis 26 genau einmal vergeben!',
-        oldRanks: ranks
+        error: 'Bitte alle 26 Länder einsortieren!',
       });
-  }
-  db.prepare('INSERT INTO votes (data) VALUES (?)').run(JSON.stringify(ranks));
-  res.render('thanks');
-});
-
+    }
+    // valid, unique?
+    const nums = arr.map(o => o.rank);
+    if (new Set(nums).size !== 26 || nums.some(n => n < 1 || n > 26)) {
+      return res.status(400).render('index', {
+        countries: COUNTRIES,
+        error: 'Rangliste enthält Fehler (doppelt oder außerhalb 1–26).',
+      });
+    }
+    db.prepare('INSERT INTO votes (data) VALUES (?)').run(JSON.stringify(arr));
+    res.render('thanks');
+  });
 
 app.listen(3000, () => console.log('Server running on Port 3000'));
