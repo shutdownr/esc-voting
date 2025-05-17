@@ -40,22 +40,15 @@ app.post('/vote', (req, res) => {
                 new Set(nums).size === 26;
 
   if (!valid) {
-    return res.status(400).send('Bitte jeden Rang von 1–26 genau einmal vergeben!');
+    return res.status(400).render('index', {
+        countries: COUNTRIES,
+        error: 'Bitte jeden Rang von 1 bis 26 genau einmal vergeben!',
+        oldRanks: ranks
+      });
   }
   db.prepare('INSERT INTO votes (data) VALUES (?)').run(JSON.stringify(ranks));
-  res.send('Danke fürs Abstimmen!  <a href="/">zurück</a>');
+  res.render('thanks');
 });
 
-app.get('/ergebnis', (_, res) => {
-  const rows   = db.prepare('SELECT data FROM votes').all();
-  const totals = COUNTRIES.map(c => ({ country: c, score: 0 }));
 
-  for (const row of rows) {
-    const data = JSON.parse(row.data);
-    COUNTRIES.forEach((c, i) => totals[i].score += 27 - Number(data[c])); // 1. Platz = 26 Punkte
-  }
-  totals.sort((a, b) => b.score - a.score);
-  res.render('results', { totals });
-});
-
-app.listen(3000, () => console.log('Server läuft auf Port 3000'));
+app.listen(3000, () => console.log('Server running on Port 3000'));

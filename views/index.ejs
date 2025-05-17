@@ -1,6 +1,6 @@
 <!DOCTYPE html><html lang="de"><head>
     <meta charset="utf-8" />
-    <title>ESC Voting</title>
+    <title>ESC Abstimmung 2025</title>
     <style>
     body{font-family:sans-serif;max-width:640px;margin:auto;padding:1rem}
     label{display:flex;justify-content:space-between;margin:3px 0}
@@ -18,6 +18,29 @@
       <% }) %>
       <button type="submit">Abstimmen</button>
     </form>
-    <p><a href="/ergebnis">Zwischenergebnis ansehen</a></p>
+    <% if (error) { %>
+        <p style="color:#d00;"><%= error %></p>
+      <% } %>
+
+    <script>
+    const KEY='escRanks';
+    document.addEventListener('DOMContentLoaded',()=>{
+        try{
+        const saved=JSON.parse(localStorage.getItem(KEY)||'{}');
+        for(const [country,rank] of Object.entries(saved)){
+            const inp=document.querySelector(`input[name="rank[${country}]"]`);
+            if(inp) inp.value=rank;
+        }
+        }catch(e){}
+        document.querySelectorAll('input[name^="rank["]').forEach(inp=>{
+        inp.addEventListener('input',()=>{
+            const country=inp.name.slice(5,-1);   // rank[Land] -> Land
+            const data=JSON.parse(localStorage.getItem(KEY)||'{}');
+            data[country]=inp.value;
+            localStorage.setItem(KEY,JSON.stringify(data));
+        });
+        });
+    });
+    </script>
     </body></html>
     
