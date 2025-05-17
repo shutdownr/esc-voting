@@ -1,49 +1,87 @@
 <!DOCTYPE html><html lang="de"><head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>ESC Abstimmung 2025</title>
     <style>
-    body{font-family:sans-serif;max-width:640px;margin:auto;padding:1rem}
-    #rankList{list-style:none;padding:0;margin:0}
-    .item{
-      padding:.4rem .6rem;border:1px solid #ccc;margin:.2rem 0;
-      border-radius:4px;display:flex;justify-content:space-between;align-items:center;
-      cursor:grab;
-      user-select:none;
-    }
-    .flag{margin-left:.25rem}
-    .btn-primary {
-      display:block;
-      margin:2rem auto 0;
-      padding:.75rem 2.5rem;
-      font-size:1.15rem;
-      font-weight:700;
-      color:#fff;
-      background:linear-gradient(135deg,#4b7bec 0%,#3867d6 100%);
-      border:none;
-      border-radius:9999px;
-      box-shadow:0 4px 8px rgba(0,0,0,.15);
-      cursor:pointer;
-      transition:transform .08s ease, box-shadow .08s ease;
-    }
-  
-    .btn-primary:hover,
-    .btn-primary:focus {
-      transform:translateY(-2px);
-      box-shadow:0 6px 12px rgba(0,0,0,.20);
-    }
-  
-    .btn-primary:active {
-      transform:translateY(0);
-      box-shadow:0 3px 6px rgba(0,0,0,.12);
-    }
-    </style>
+        /* ---------- global ---------- */
+        :root{
+          --accent:#4b7bec;
+          --accent-dark:#3867d6;
+        }
+        html{font-family:system-ui,-apple-system,sans-serif;}
+        body{margin:0;padding:1rem;}
+        
+        /* -------- container width -------- */
+        main{max-width:640px;margin:auto;}        /* desktop cap, full-width on mobile */
+        
+        /* ---------- ranking list ---------- */
+        #rankList{
+          list-style:none;margin:0;padding:0;
+          counter-reset:rank;
+        }
+        .item{
+          position:relative;
+          display:flex;justify-content:space-between;align-items:center;
+          padding:.75rem 1rem .75rem 3.2rem;      /* extra left room for badge */
+          border:1px solid #d0d4e7;border-radius:8px;margin:.25rem 0;
+          background:#fff;cursor:grab;user-select:none;
+          font-size:clamp(.95rem, 3vw, 1.05rem);
+          touch-action:pan-y;                     /* lets you scroll when not dragging */
+        }
+        .item::before{
+          counter-increment:rank;
+          content:counter(rank);
+          position:absolute;left:1rem;top:50%;transform:translateY(-50%);
+          width:2rem;height:2rem;border-radius:50%;
+          background:#e8eeff;color:#28324e;font-weight:700;
+          display:flex;align-items:center;justify-content:center;
+          font-size:.9rem;
+        }
+        .flag{margin-left:.35rem}
+        
+        /* ---------- name field ---------- */
+        label.name-field{
+          display:block;margin:1.25rem 0 .75rem;
+          font-weight:600;font-size:1rem;
+        }
+        label.name-field input{
+          display:block;width:100%;margin-top:.4rem;
+          padding:.6rem .8rem;font-size:1rem;border:1px solid #c4c9dd;border-radius:6px;
+        }
+        
+        /* ---------- button ---------- */
+        .btn-primary{
+          display:block;width:100%;max-width:320px;text-align:center;
+          margin:2rem auto 0;padding:.9rem 0;
+          font-size:1.125rem;font-weight:700;color:#fff;border:none;
+          border-radius:9999px;
+          background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+          box-shadow:0 4px 8px rgba(0,0,0,.12);
+          transition:transform .08s,box-shadow .08s;
+        }
+        .btn-primary:hover,.btn-primary:focus{transform:translateY(-2px);box-shadow:0 6px 12px rgba(0,0,0,.18);}
+        .btn-primary:active{transform:none;box-shadow:0 3px 6px rgba(0,0,0,.12);}
+        
+        /* ---------- desktop tweaks ---------- */
+        @media (min-width:680px){
+          body{padding:2rem;}
+          .item{padding:.6rem 1rem .6rem 2.8rem;}
+          .item::before{width:1.8rem;height:1.8rem;font-size:.8rem;}
+        }
+        </style>
+        
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.2/Sortable.min.js"></script>
     </head><body>
 
-    
+<main>
 <h1>Deine Rangliste (Oben = beste Platzierung)</h1>
 
 <form action="/vote" method="post">
+  <label style="display:block;margin-bottom:1rem">
+    Dein Name:
+    <input type="text" name="voter" required
+            style="margin-left:.5rem;padding:.3rem .6rem;font-size:1rem">
+  </label>
   <ol id="rankList">
     <% countries.forEach(c => { %>
       <li class="item" data-country="<%= c %>">
@@ -55,39 +93,58 @@
   <input type="hidden" name="ranking" id="rankingField">
   <button type="submit" class="btn-primary">Abstimmen</button>
 </form>
+</main>
 
 <!-- --- SCRIPTS ------------------------------------------------------ -->
 <script>
-const KEY      = 'escRanks';
-const list     = document.getElementById('rankList');
-const hidden   = document.getElementById('rankingField');
+    const KEY      = 'escRanks';
+    const NAME_KEY   = 'escVoter';
+    const list     = document.getElementById('rankList');
+    const hidden   = document.getElementById('rankingField');
+    const nameInput  = document.querySelector('input[name="voter"]');
 
-new Sortable(list, {
-  animation: 150,
-  onEnd: saveOrder
-});
+    try {
+        const storedName = localStorage.getItem(NAME_KEY);
+        if (storedName && nameInput) nameInput.value = storedName;
+    } catch(e){}
 
-(function restore() {
-  try {
-    const saved = JSON.parse(localStorage.getItem(KEY)||'[]');  // [{country,rank},…]
-    if (saved.length) {
-      const map = Object.fromEntries(saved.map(o => [o.country, true]));
-      [...list.children].forEach(li => {
-        const country = li.dataset.country;
-        if (map[country]) list.appendChild(li);
-      });
+    if (nameInput) {
+        nameInput.addEventListener('input', () => {
+            localStorage.setItem(NAME_KEY, nameInput.value.trim());
+        });
     }
-  } catch(e){}
-  saveOrder();
-})();
 
-function saveOrder() {
-  const order = [...list.children].map((li, idx) => ({
-    country: li.dataset.country,
-    rank: idx + 1
-  }));
-  hidden.value = JSON.stringify(order);
-  localStorage.setItem(KEY, hidden.value);                // persist to cache
-}
+    new Sortable(list, { animation:150, onEnd: saveOrder, touchStartThreshold:10 });
+
+    /* ---------- Restore last order ---------- */
+    (function restore () {
+        try {
+        const saved = JSON.parse(localStorage.getItem(KEY) || '[]');   // [{country,rank}, …]
+        if (saved.length) {
+            /* build a doc-fragment in saved rank order and re-append */
+            const frag = document.createDocumentFragment();
+            saved
+            .sort((a, b) => a.rank - b.rank)           // ensure 1 … 26
+            .forEach(({ country }) => {
+                const li = list.querySelector(`[data-country="${CSS.escape(country)}"]`);
+                if (li) frag.appendChild(li);
+            });
+            list.appendChild(frag);
+        }
+        } catch (e) {
+        console.warn('localStorage restore failed', e);
+        }
+        saveOrder();                                     // (re)fill hidden field
+    })();
+
+    /* ---------- Save after every drag ---------- */
+    function saveOrder () {
+        const order = [...list.children].map((li, idx) => ({
+        country: li.dataset.country,
+        rank:    idx + 1
+        }));
+        hidden.value = JSON.stringify(order);
+        localStorage.setItem(KEY, hidden.value);         // persist
+    }
 </script>
 </body></html>

@@ -1,3 +1,60 @@
-<p>Danke fürs Abstimmen!</p>
-<script>localStorage.removeItem('escRanks');</script>
-<a href="/">Neue Rangliste eingeben</a>
+<!-- views/thanks.ejs -->
+<!DOCTYPE html><html lang="de"><head>
+    <meta charset="utf-8" />
+    <title>Danke für deine Stimme!</title>
+    
+    <!-- ——— Minimal, modern look ——— -->
+    <style>
+    :root{
+      --accent:#4b7bec;
+      --accent-dark:#3867d6;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{
+      display:flex;flex-direction:column;justify-content:center;align-items:center;
+      min-height:100dvh;background:#f5f7ff;font-family:system-ui,sans-serif;text-align:center;
+    }
+    h1{font-size:2.2rem;font-weight:800;margin-bottom:.5rem}
+    p{font-size:1.15rem;margin-bottom:2rem}
+    .btn{
+      display:inline-block;padding:.75rem 2.5rem;border:none;border-radius:9999px;
+      font-size:1rem;font-weight:700;text-decoration:none;color:#fff;
+      background:linear-gradient(135deg,var(--accent),var(--accent-dark));
+      box-shadow:0 4px 8px rgba(0,0,0,.15);transition:transform .08s,box-shadow .08s;
+    }
+    .btn:hover,.btn:focus{transform:translateY(-2px);box-shadow:0 6px 12px rgba(0,0,0,.2)}
+    .btn:active{transform:none;box-shadow:0 3px 6px rgba(0,0,0,.12)}
+    #fireworks{position:fixed;inset:0;pointer-events:none;z-index:1}
+
+    </style>
+    </head><body>
+    
+    <div id="fireworks"></div>
+
+    
+    <h1>Danke fürs Abstimmen, <%= voter %>! 🎉</h1>
+    <p>Deine Rangliste wurde gespeichert.</p>
+    
+    <a href="/" class="btn">Neue Rangliste eingeben</a>
+    
+    <script >
+    /* ——— clean up any cached ranking ——— */
+    localStorage.removeItem('escRanks');
+    localStorage.removeItem('escVoter');
+    </script>
+    <script type="module">
+    import { Fireworks } from "https://cdn.jsdelivr.net/npm/fireworks-js@2.10.8/dist/index.es.js";
+    const fw = new Fireworks(document.getElementById('fireworks'), {
+    hue:{min:0,max:360},
+    delay:{min:15,max:30},
+    speed:4,
+    particles:90,
+    trace:6,
+    sound:{enabled:false},
+    autoplay:true
+    });
+    fw.start();
+    setTimeout(()=>fw.stop(),4000);
+    </script>
+    </body></html>
+    
